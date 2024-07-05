@@ -12,7 +12,6 @@ export default class AI implements Plugin {
   priority = 1;
 
   async handle(question: Message, qqClient: QQClient): Promise<boolean> {
-    console.log('AI插件开始处理消息');
     return new Promise(async (resolve) => {
       if (!qqClient.isChatWithBot(question)) {
         return resolve(false);
@@ -21,7 +20,7 @@ export default class AI implements Plugin {
         const content = qqClient.removeCQCodes(question.raw_message);
         messages.push({ role: 'user', content });
         const startTime = new Date();
-        const response = await sendMessageToSpark({ messages, model: 'general' });
+        const response = await sendMessageToSpark({ messages, model: 'generalv3' });
         const endTime = new Date();
         const responseTime = endTime.getTime() - startTime.getTime();
         messages.push({ role: 'assistant', content: response });

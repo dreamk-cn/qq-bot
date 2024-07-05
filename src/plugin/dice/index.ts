@@ -25,7 +25,6 @@ export default class Dice implements Plugin {
   priority = 50;
 
   async handle(question: Message, qqClient: QQClient): Promise<boolean> {
-    console.log('骰子插件开始处理消息');
     return new Promise(async (resolve) => {
       const content = qqClient.formateChatWithBot(question.raw_message);
       if (!qqClient.isCommand(content, '/d')) {
