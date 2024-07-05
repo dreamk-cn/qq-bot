@@ -5,11 +5,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "dotenvx run --env-file=.env.development -- nodemon src/index.ts",
-    "test": "dotenvx run --env-file=.env.production -- nodemon src/index.ts",
-    "start": "dotenvx run --env-file=.env.production -- ts-node src/index.ts",
+    "dev": "nodemon src/index.ts",
+    "start": "ts-node src/index.ts",
     "build": "tsc",
-    "start:dist": "dotenvx run --env-file=.env.production -- node dist/index.js",
+    "start:dist": "node dist/index.js",
     "lint:check": "eslint src",
     "lint:fix": "eslint --fix src",
     "typecheck": "tsc --noEmit"
@@ -23,9 +22,11 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "@dotenvx/dotenvx": "^1.5.0",
+    "@types/node-cron": "^3.0.11",
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "sqlite3": "^5.1.7",
     "ws": "^8.17.1"
   },
   "devDependencies": {

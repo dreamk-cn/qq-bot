@@ -3,7 +3,7 @@ import axios from 'axios';
 const { API_SECRET = '', API_KEY = '' } = process.env;
 
 export interface SparkMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | string;
   content: string;
 }
 
