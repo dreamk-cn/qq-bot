@@ -1,4 +1,5 @@
 import { QQClient } from './qq-client';
+
 // 消息, 消息发送, 请求, 通知, 或元事件
 export type PostType = 'message' | 'message_sent' | 'request' | 'notice' | 'meta_event';
 

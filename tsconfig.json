@@ -9,10 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // 添加对装饰器的支持
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
-    "./*.js",
     "src/**/*.ts"
   ]
 }

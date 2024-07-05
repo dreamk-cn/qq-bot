@@ -129,12 +129,14 @@ export class QQClient extends EventEmitter {
         if (!(handler.enable ?? true)) {
           break;
         }
-        if (await handler.handle(message, this)) {
+        const isHandle = await handler.handle(message, this);
+        console.log(handler.name, isHandle);
+        if (isHandle) {
           break;
         }
       }
     } catch (e) {
-      this.sendMessage({ message: '出错了~', userId: 1633051172 });
+      this.sendMessage({ message: '出错了~没法回答你这个问题了😭', userId: message.user_id, groupId: message.message_type === 'group' ? message.group_id : undefined });
     }
   }
 
@@ -179,9 +181,18 @@ export class QQClient extends EventEmitter {
     return message.trim();
   }
 
-  public isGroup(message: Message) {
-    return message.message_type === 'group';
+  public formatRawMessage(message: string) {
+    if (message.includes(`[CQ:at,qq=${BOT_QQ}]`)) {
+      message = this.removeCQCodes(message);
+      if (message.startsWith(BOT_NAME)) {
+        message = message.substring(BOT_NAME.length);
+      }
+    } else if (message.startsWith(BOT_NAME)) {
+      message = message.substring(BOT_NAME.length);
+    }
+    return message.trim();
   }
+  
 }
 
 // 只能有一个实例
