@@ -2,6 +2,7 @@ import { WebSocket, Server, RawData } from 'ws';
 import EventEmitter from 'events';
 import { Message, RequestData, Plugin } from './types';
 import config from '../config/index';
+import { HistoryMessage } from '../db/index';
 
 const { WS_HOST = '', WS_PORT = '', WS_PATH = '', BOT_QQ = '' } = process.env;
 const { BOT_NAME } = config;
@@ -14,6 +15,8 @@ export class QQClient extends EventEmitter {
   private ws: WebSocket | null = null;
 
   private plugins: Plugin[] = [];
+
+  private historyMessage: HistoryMessage = HistoryMessage.getInstance();
 
   constructor() {
     super();
@@ -39,6 +42,7 @@ export class QQClient extends EventEmitter {
     const qqMessage: Message = JSON.parse(data.toString('utf-8')) as Message;
     if (qqMessage.post_type === 'message') {
       this.emit('message', qqMessage);
+      this.historyMessage.add(qqMessage.user_id, qqMessage.raw_message, qqMessage.time.toString(), qqMessage.message_type === 'group' ? qqMessage.group_id : undefined);
       await this.distributeMessage(qqMessage);
     }
   }
@@ -53,6 +57,9 @@ export class QQClient extends EventEmitter {
     if (!this.ws) {
       return;
     }
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const { params: { user_id, group_id, message  } } = data;
+    this.historyMessage.add(Number(user_id), message.toString(), Math.floor(Date.now() / 1000).toString(), Number(group_id));
     this.ws.send(this.messageFormat(data));
   }
 
@@ -178,4 +185,4 @@ export class QQClient extends EventEmitter {
 }
 
 // 只能有一个实例
-export default QQClient.getInstance;
+export default QQClient.getInstance();
