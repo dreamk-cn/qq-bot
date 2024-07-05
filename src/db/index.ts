@@ -1,19 +1,35 @@
-import * as Sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 
-let db = new Sqlite3.Database('./message.db');
+const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS message (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId INTEGER,
+  groupId INTEGER,
+  message TEXT,
+  time TEXT
+)`;
 
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS history_message (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- 对话记录的唯一标识符，自增
-    group_id TEXT, -- 群聊表示，如果不为空则说明该条消息是用户在群里发送的消息
-    user_id TEXT NOT NULL, -- 用户的唯一标识，可以是用户名、邮箱或其他唯一标识符
-    create_time INTEGER DEFAULT (strftime('%s', 'now')), -- 对话发生的时间，默认为当前时间
-    context TEXT NOT NULL, -- 用于存储对话的上下文或会话状态信息
-);`, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log('创建表成功');
+export class HistoryMessage {
+  static instance: HistoryMessage | null = null;
+  
+  db: Database.Database;
+
+  static getInstance(): HistoryMessage {
+    if (!HistoryMessage.instance) {
+      HistoryMessage.instance = new HistoryMessage();
     }
-  });
-});
+    return HistoryMessage.instance;
+  }
+
+  constructor() {
+    this.db = new Database('./src/db/message.db');
+    this.db.exec(CREATE_TABLE);
+  }
+
+  add(userId: number, message: string, time: string, groupId?: number) {
+    this.db.prepare('INSERT INTO message (userId, groupId, message, time) VALUES (?, ?, ?, ?)').run(userId, groupId, message, time);
+  }
+
+  get(userId: number, groupId: number, limit: number) {
+    return this.db.prepare('SELECT * FROM message WHERE userId = ? AND groupId = ? ORDER BY time DESC LIMIT ?').all(userId, groupId, limit);
+  }
+}
