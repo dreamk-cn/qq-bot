@@ -1,8 +1,9 @@
 import { WebSocket, Server, RawData } from 'ws';
 import EventEmitter from 'events';
-import { Message, RequestData, Plugin } from './types';
-import config from '../config/index';
-import { HistoryMessage } from '../db/index';
+import { Message, RequestData } from '@/core/types';
+import { CommandRegistry } from '@/core/command-decorator';
+import config from '@/config/index';
+
 
 const { WS_HOST = '', WS_PORT = '', WS_PATH = '', BOT_QQ = '' } = process.env;
 const { BOT_NAME } = config;
@@ -13,10 +14,6 @@ export class QQClient extends EventEmitter {
   private wss: Server;
 
   private ws: WebSocket | null = null;
-
-  private plugins: Plugin[] = [];
-
-  private historyMessage: HistoryMessage = HistoryMessage.getInstance();
 
   constructor() {
     super();
@@ -31,6 +28,7 @@ export class QQClient extends EventEmitter {
     return QQClient.instance;
   }
 
+  // 处理连接
   private handleConnection(ws: WebSocket) {
     this.ws = ws;
     this.emit('connection');
@@ -38,12 +36,12 @@ export class QQClient extends EventEmitter {
     ws.on('message', (data) => this.handleMessage(data));
   }
 
+  // 处理消息
   private async handleMessage(data: RawData) {
-    const qqMessage: Message = JSON.parse(data.toString('utf-8')) as Message;
-    if (qqMessage.post_type === 'message') {
-      this.emit('message', qqMessage);
-      this.historyMessage.add(qqMessage.user_id, qqMessage.raw_message, qqMessage.time.toString(), qqMessage.message_type === 'group' ? qqMessage.group_id : undefined);
-      await this.distributeMessage(qqMessage);
+    const message: Message = JSON.parse(data.toString('utf-8')) as Message;
+    if (message.post_type === 'message') {
+      console.log('接收到消息', message.raw_message);
+      CommandRegistry.dispatch(message);
     }
   }
 
@@ -53,14 +51,19 @@ export class QQClient extends EventEmitter {
   }
 
   // 通用的发送消息方法
-  public send(data: RequestData) {
-    if (!this.ws) {
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { params: { user_id, group_id, message  } } = data;
-    this.historyMessage.add(Number(user_id), message.toString(), Math.floor(Date.now() / 1000).toString(), Number(group_id));
-    this.ws.send(this.messageFormat(data));
+  public async send(data: RequestData): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (!this.ws) {
+        return resolve(false);
+      }
+      this.ws.send(this.messageFormat(data), error => {
+        if (error) {
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    });
   }
 
   // 发送群聊消息
@@ -90,7 +93,7 @@ export class QQClient extends EventEmitter {
     this.send(requestData);
   }
 
-  // 自动判断群消息还是私聊消息
+  // 自动判断发送群消息还是私聊消息
   public sendMessage(data: { message: string, userId?: number, groupId?: number }) {
     const { message, userId, groupId } = data;
 
@@ -106,40 +109,9 @@ export class QQClient extends EventEmitter {
     }
   }
 
-  // 允许插件注册消息处理器
-  public registerMessageHandler(handler: Plugin) {
-    let inserted = false;
-    for (let i = this.plugins.length - 1; i >= 0; i--) {
-      if ((this.plugins[i].priority ?? 0) > (handler.priority ?? 0)) {
-        this.plugins.splice(i + 1, 0, handler);
-        inserted = true;
-        break;
-      }
-    }
-    if (!inserted) {
-      this.plugins.unshift(handler);
-    }
-  }
-
-  // 在消息事件中分发消息给插件处理
-  private async distributeMessage(message: Message) {
-    try {
-      for (const handler of this.plugins) {
-        console.log(handler.name);
-        if (!(handler.enable ?? true)) {
-          break;
-        }
-        const isHandle = await handler.handle(message, this);
-        console.log(handler.name, isHandle);
-        if (isHandle) {
-          break;
-        }
-      }
-    } catch (e) {
-      this.sendMessage({ message: '出错了~没法回答你这个问题了😭', userId: message.user_id, groupId: message.message_type === 'group' ? message.group_id : undefined });
-    }
-  }
-
+  /**
+   * 一些判断方法
+   */
   public removeCQCodes(message: string): string {
     // 正则表达式匹配CQ码，包括[CQ:开头，中间任意非]字符，直到遇到]
     const cqCodeRegex = /\[CQ:[^\]]*\]/g;
@@ -169,18 +141,6 @@ export class QQClient extends EventEmitter {
     }
   }
 
-  public formateChatWithBot(message: string) {
-    if (message.includes(`[CQ:at,qq=${BOT_QQ}]`)) {
-      message = this.removeCQCodes(message);
-      if (message.startsWith(BOT_NAME)) {
-        message = message.substring(BOT_NAME.length);
-      }
-    } else if (message.startsWith(BOT_NAME)) {
-      message = message.substring(BOT_NAME.length);
-    }
-    return message.trim();
-  }
-
   public formatRawMessage(message: string) {
     if (message.includes(`[CQ:at,qq=${BOT_QQ}]`)) {
       message = this.removeCQCodes(message);
@@ -192,8 +152,6 @@ export class QQClient extends EventEmitter {
     }
     return message.trim();
   }
-  
 }
 
-// 只能有一个实例
 export default QQClient.getInstance();

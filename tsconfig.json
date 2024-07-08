@@ -10,6 +10,12 @@
       ],
       "@config/*": [
         "src/config/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ],
+      "@/plugin/*": [
+        "src/plugin/*"
       ]
     },
     "target": "es6",

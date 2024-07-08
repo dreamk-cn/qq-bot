@@ -1,14 +1,14 @@
-import { QQClient } from './qq-client';
-
 // 消息, 消息发送, 请求, 通知, 或元事件
 export type PostType = 'message' | 'message_sent' | 'request' | 'notice' | 'meta_event';
 
+// 每种消息都会附带这个信息
 interface Base {
   time: number;
   self_id: number;
   post_type: PostType;
 }
 
+// 用户发送的消息
 export interface MessageDetail {
   type: 'text' | 'image';
   data: {
@@ -29,6 +29,7 @@ export interface GroupSender extends Sender {
   group_id: number;
 }
 
+// 私聊消息和群聊消息的共同点
 interface BaseMessage extends Base {
   post_type: 'message';
   message_type: 'private' | 'group';
@@ -73,12 +74,8 @@ export interface RequestData {
   echo?: string;
 }
 
-export interface Plugin {
-  name?: string;
-  priority?: number;
-  description?: string;
-  author?: string;
-  version?: string;
-  enable?: boolean;
-  handle(message: Message, client: QQClient): Promise<boolean>
-}
+// 指令处理器 for command 装饰器
+export type CommandHandler = (message: Message) => Promise<string>;
+export type CommandRule = (message: Message) => boolean;
+export type CommandPriority = number;
+export type CommandBlock = boolean;
