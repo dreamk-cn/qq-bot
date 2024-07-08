@@ -1,19 +1,17 @@
 import sendMessageToSpark, { type SparkMessage } from './spartk-http';
-import { OnChatToBot } from '../../core/decorator';
-import { Message, Plugin } from '../../core/types';
-import { QQClient } from '../../core/qq-client';
-import config  from '../../config';
-const { BOT_PRESET } = config;
+import { onCommand } from '@/core/command-decorator';
+import { Message } from '@/core/types';
+import qqClient from '@/core/qq-client';
+import Config  from '@/config';
+const { BOT_PRESET } = Config;
 
 const messages: SparkMessage[] = [ ...BOT_PRESET ];
 
-export default class AI implements Plugin {
+export default class AI {
   name = '讯飞星火AI大模型';
 
-  priority = 1;
-
-  @OnChatToBot()
-  async handle(question: Message, qqClient: QQClient): Promise<boolean> {
+  @onCommand('', () => true, [], 1, true)
+  async handle(question: Message): Promise<boolean> {
     try {
       const content = qqClient.formatRawMessage(question.raw_message);
       messages.push({ role: 'user', content });

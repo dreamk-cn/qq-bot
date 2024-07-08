@@ -1,6 +1,6 @@
-import { Message, Plugin } from '../../core/types';
-import qClient, { QQClient } from '../../core/qq-client';
-import { OnChatToBot, OnCommand } from '../../core/decorator';
+import { Message } from '@/core/types';
+import qqClient from '@/core/qq-client';
+import { onCommand } from '@/core/command-decorator';
 import Cron from 'node-cron';
 
 const Survivor: string[] = [ '律师', '"囚徒"', '医生', '"小女孩"', '啦啦队员', '调香师', '佣兵', '"心理学家"'];
@@ -13,35 +13,38 @@ function getRandomElement(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export default class D5 implements Plugin {
+export default class D5 {
   name = 'D5';
-
-  priority = 90;
 
   crons: Cron.ScheduledTask[] = [];
 
   constructor() {
     this.crons.push(Cron.schedule('* * 12,19 * * *', () => {
       console.log('identify 5 cron!');
-      qClient.sendPrivateMessage({ message: '时间经不起等待，第五人格启动!', userId: 1633051172 });
+      qqClient.sendPrivateMessage({ message: '时间经不起等待，第五人格启动!', userId: 1633051172 });
     }));
   }
 
-  @OnCommand(['随机监管者', '随机求生者'])
-  async handle(question: Message, qqClient: QQClient): Promise<boolean> {
-    const content = qqClient.formatRawMessage(question.raw_message);
-    console.log(content);
+  @onCommand('随机监管者', () => true, [], 50, true)
+  async handleHunter(question: Message): Promise<boolean> {
     try {
-      let response = '';
-      if (content.startsWith('随机求生者')) {
-        response = getRandomElement(Survivor);
-      } else {
-        response = getRandomElement(Hunter);
-      }
+      let response = getRandomElement(Hunter);
       qqClient.sendMessage({ message: response, userId: question.user_id, groupId: question.message_type === 'group' ? question.group_id : 0 });
       return true;
     } catch (error) {
       throw error;
     }
   }
+
+  @onCommand('随机求生者', () => true, [], 50, true)
+  async handleSurvivor(question: Message): Promise<boolean> {
+    try {
+      const response = getRandomElement(Survivor);
+      qqClient.sendMessage({ message: response, userId: question.user_id, groupId: question.message_type === 'group' ? question.group_id : 0 });
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }

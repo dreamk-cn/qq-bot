@@ -1,6 +1,7 @@
-import { Message, Plugin } from '../../core/types';
-import { QQClient } from '../../core/qq-client';
-import { random } from '../../util/random';
+import { Message } from '@/core/types';
+import qqClient from '@/core/qq-client';
+import { onCommand } from '@/core/command-decorator';
+import { random } from '@/util/random';
 
 function extractDiceRoll(input: string): { x?: number, y?: number } {
   const pattern = /^\/d\s+(\d+)-(\d+)$/;
@@ -19,19 +20,13 @@ function extractDiceRoll(input: string): { x?: number, y?: number } {
   }
 }
 
-export default class Dice implements Plugin {
+export default class Dice {
   name = '超级骰子';
 
-  priority = 50;
-
-  async handle(question: Message, qqClient: QQClient): Promise<boolean> {
+  @onCommand('/d', () => true, [], 50, true)
+  async handle(question: Message): Promise<boolean> {
     return new Promise(async (resolve) => {
-      const content = qqClient.formateChatWithBot(question.raw_message);
-      if (!qqClient.isCommand(content, '/d')) {
-        return resolve(false);
-      }
-      console.log(content);
-      
+      const content = qqClient.formatRawMessage(question.raw_message);
       try {
         const { x = 6, y = 11 } = extractDiceRoll(content);
         let sum = 0;
@@ -57,5 +52,15 @@ export default class Dice implements Plugin {
         throw error;
       }
     });
+  }
+
+  @onCommand('/d help', () => true, [], 50, true)
+  async handleHelp(question: Message): Promise<boolean> {
+    qqClient.sendMessage({
+      message: '骰子功能使用说明...',
+      userId: question.user_id,
+      groupId: question.message_type === 'group' ? question.group_id : 0,
+    });
+    return true;
   }
 }
