@@ -1,13 +1,16 @@
 import 'dotenv/config';
 import qqClient from '@/core/qq-client';
 
-import AI from './plugin/ai';
-import D5 from './plugin/d5';
-import Dice from './plugin/dice';
-
 qqClient.on('connection', async () => {
-  new AI();
-  new D5();
-  new Dice();
   console.log('与go-cqhttp的连接已建立');
+  const plugin = await Promise.all([
+    import('@/plugin/ai'),
+    import('@/plugin/d5'),
+    import('@/plugin/dice'),
+    import('@/plugin/yesOrNo'),
+  ]);
+  plugin.forEach(async (p) => {
+    new p.default();
+  });
+  console.log('插件加载完毕');
 });
