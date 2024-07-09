@@ -1,8 +1,10 @@
+import { EventEmitter } from 'events';
 import { WebSocket, Server, RawData } from 'ws';
 import { Message, RequestData } from '@/core/types';
 import { CommandRegistry } from '@/core/command-decorator';
+import Axios from 'axios';
 import config from '@/config/index';
-import { EventEmitter } from 'events';
+
 
 
 const { WS_HOST = '', WS_PORT = '', WS_PATH = '', BOT_QQ = '' } = process.env;
@@ -41,7 +43,6 @@ export class QQClient extends EventEmitter {
   private async handleMessage(data: RawData) {
     const message: Message = JSON.parse(data.toString('utf-8')) as Message;
     if (message.post_type === 'message') {
-      console.log('接收到消息', message.raw_message);
       CommandRegistry.dispatch(message);
     }
   }
@@ -57,7 +58,6 @@ export class QQClient extends EventEmitter {
       if (!this.ws) {
         return resolve(false);
       }
-      console.log('发送消息', data);
       this.ws.send(this.messageFormat(data), error => {
         if (error) {
           console.log('发送消息失败：', error);
@@ -70,17 +70,19 @@ export class QQClient extends EventEmitter {
   }
 
   // 发送群聊消息
-  public sendGroupMessage(data: { message: string, groupId: number, userId?: number }) {
-    const { message, groupId, userId } = data;
+  public sendGroupMessage(data: { message: string, groupId: number, userId?: number[] | number, id?: number }) {
+    const { message, groupId, userId = [], id } = data;
+    const uId = typeof userId === 'number' ? [userId] : userId;
+    // 处理多个id
+    const ids = uId?.map((i) => `[CQ:at,qq=${i}]`).join(' ');
     const requestData: RequestData = {
       action: 'send_group_msg',
       params: {
         group_id: groupId,
-        message: userId ? `[CQ:at,qq=${userId}] ${message}` : message,
+        message: `${ id ? `[CQ:reply,id=${id}]` : '' }${ ids ? `${ids} ${message}` : message }`,
       },
     };
-    console.log(requestData);
-    this.send(requestData);
+    return this.send(requestData);
   }
 
   // 发送私聊消息
@@ -93,22 +95,23 @@ export class QQClient extends EventEmitter {
         message,
       },
     };
-    this.send(requestData);
+    return this.send(requestData);
   }
 
   // 自动判断发送群消息还是私聊消息
-  public sendMessage(data: { message: string, userId?: number, groupId?: number }) {
-    const { message, userId, groupId } = data;
-
+  public sendMessage(data: { message: string, userId?: number[] | number, groupId?: number, id?: number }) {
+    const { message, userId, groupId, id } = data;
     if (groupId) {
       if (userId) {
-        this.sendGroupMessage({ message, groupId, userId });
+        return this.sendGroupMessage({ message, groupId, userId, id });
       } else {
-        this.sendGroupMessage({ message, groupId });
+        return this.sendGroupMessage({ message, groupId, id });
       }
     } else {
       if (userId)
-        this.sendPrivateMessage({ message, userId });
+        return this.sendPrivateMessage({ message, userId: typeof userId === 'number' ? userId : userId[0] });
+      else 
+        return false;
     }
   }
 
@@ -163,7 +166,11 @@ export class QQClient extends EventEmitter {
     } else if (message.startsWith(BOT_NAME)) {
       message = message.substring(BOT_NAME.length);
     }
-    return message.trim();
+    return this.removeCQCodes(message).trim();
+  }
+
+  public async getUserAvatar(userId: number, size: 40 | 100 | 140 | 640 = 100) {
+    return `https://q1.qlogo.cn/g?b=qq&nk=${userId}&s=${size}`;
   }
 }
 

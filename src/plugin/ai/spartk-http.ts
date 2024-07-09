@@ -14,8 +14,20 @@ export interface SparkRequestConfig {
   maxTokens?: number; // 默认4096
 }
 
-async function querySparkApi(config: SparkRequestConfig): Promise<string> {
-  const { model = 'general', messages, temperature = 0.5, maxTokens = 4096 } = config;
+export interface SparkResonse {
+  code: 0 | number;
+  message: string;
+  sid: string;
+  choices: { message: { content: string }, index: number }[];
+  usage: {
+    prompt_tokens: number,
+    completion_tokens: number,
+    total_tokens: number,
+  }
+}
+
+async function querySparkApi(config: SparkRequestConfig): Promise<SparkResonse> {
+  const { model = 'general', messages, temperature = 0.5, maxTokens = 2 } = config;
 
   // 请求URL
   const apiUrl = 'https://spark-api-open.xf-yun.com/v1/chat/completions';
@@ -36,19 +48,14 @@ async function querySparkApi(config: SparkRequestConfig): Promise<string> {
 
   try {
     // 发起POST请求
-    const response = await axios.post(apiUrl, requestBody, { headers });
+    const { status, data } = await axios.post<SparkResonse>(apiUrl, requestBody, { headers });
 
     // 检查响应状态
-    if (response.status !== 200) {
-      throw new Error(`Spark API request failed with status ${response.status}`);
+    if (status !== 200) {
+      throw new Error(`Spark API request failed with status ${status}`);
     }
 
-    // 提取并返回AI的回答内容
-    const aiResponse = response.data.choices[0]?.message?.content;
-    if (!aiResponse) {
-      throw new Error("Failed to retrieve AI's response from the API.");
-    }
-    return aiResponse;
+    return data;
   } catch (error) {
     console.error('Error querying Spark API:', error);
     throw error;

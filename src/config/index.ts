@@ -1,5 +1,6 @@
 const name = '能能';
 export default {
+  DEV: true,
   BOT_NAME: name,
   BOT_QQ: '3970663975',
   BOT_ADMIN: ['1633051172'],
