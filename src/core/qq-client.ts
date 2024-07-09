@@ -1,8 +1,8 @@
 import { WebSocket, Server, RawData } from 'ws';
-import EventEmitter from 'events';
 import { Message, RequestData } from '@/core/types';
 import { CommandRegistry } from '@/core/command-decorator';
 import config from '@/config/index';
+import { EventEmitter } from 'events';
 
 
 const { WS_HOST = '', WS_PORT = '', WS_PATH = '', BOT_QQ = '' } = process.env;
@@ -17,6 +17,7 @@ export class QQClient extends EventEmitter {
 
   constructor() {
     super();
+
     this.wss = new WebSocket.Server({ host: WS_HOST, port: Number(WS_PORT), path: WS_PATH });
     this.wss.on('connection', (ws) => this.handleConnection(ws));
   }
@@ -32,7 +33,7 @@ export class QQClient extends EventEmitter {
   private handleConnection(ws: WebSocket) {
     this.ws = ws;
     this.emit('connection');
-
+    // 监听消息
     ws.on('message', (data) => this.handleMessage(data));
   }
 
@@ -56,8 +57,10 @@ export class QQClient extends EventEmitter {
       if (!this.ws) {
         return resolve(false);
       }
+      console.log('发送消息', data);
       this.ws.send(this.messageFormat(data), error => {
         if (error) {
+          console.log('发送消息失败：', error);
           resolve(false);
         } else {
           resolve(true);
@@ -109,9 +112,13 @@ export class QQClient extends EventEmitter {
     }
   }
 
-  /**
-   * 一些判断方法
-   */
+  ///////////////////////////////////////////////////////////////////////////////////
+  // 分割线
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  /*
+  * 移除消息中的CQ码
+  */
   public removeCQCodes(message: string): string {
     // 正则表达式匹配CQ码，包括[CQ:开头，中间任意非]字符，直到遇到]
     const cqCodeRegex = /\[CQ:[^\]]*\]/g;
@@ -119,8 +126,9 @@ export class QQClient extends EventEmitter {
     return message.replace(cqCodeRegex, '');
   }
 
-  public isAtBot(message: Message) {
-    return message.raw_message.includes(`[CQ:at,qq=${BOT_QQ}]`);
+  // 判断字符串中有没有@BOT
+  public isAtBot(message: string) {
+    return message.includes(`[CQ:at,qq=${BOT_QQ}]`);
   }
 
   public isChatWithBot(message: Message) {
@@ -141,6 +149,11 @@ export class QQClient extends EventEmitter {
     }
   }
 
+  /**
+   * 格式化消息
+   * @param message
+   * @returns 移除CQ码和BOT名字开头后的消息
+   */
   public formatRawMessage(message: string) {
     if (message.includes(`[CQ:at,qq=${BOT_QQ}]`)) {
       message = this.removeCQCodes(message);
