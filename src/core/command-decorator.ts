@@ -46,18 +46,24 @@ export class CommandRegistry {
     }
   }
 
+  /**
+   * 分发消息到命令处理器
+   * @param message 消息对象
+   * @returns 处理结果
+   */
   static async dispatch(message: Message) {
     // 根据优先级排序，优先级高的先处理
     for (const { command, handler, rule, aliases, block } of this.handlers) {
+      const formatMessage = qqClient.formatRawMessage(message.raw_message);
       if (
-        (typeof command === 'string' && qqClient.formatRawMessage(message.raw_message).startsWith(command)) ||
-        (command instanceof RegExp && command.test(message.raw_message))
+        (typeof command === 'string' && formatMessage.startsWith(command)) ||
+        (command instanceof RegExp && command.test(formatMessage))
       ) {
         if (rule(message)) {
           const response = await handler(message);
           if (block) return response; // 如果需要阻塞，则处理完后直接返回
         }
-      } else if (aliases.some(alias => qqClient.formatRawMessage(message.raw_message).startsWith(alias))) {
+      } else if (aliases.some(alias => formatMessage.startsWith(alias))) {
         if (rule(message)) {
           const response = await handler(message);
           if (block) return response;
