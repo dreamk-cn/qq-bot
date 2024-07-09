@@ -3,8 +3,21 @@ import qqClient from '@/core/qq-client';
 import { onCommand } from '@/core/command-decorator';
 import Cron from 'node-cron';
 
-const Survivor: string[] = [ '律师', '"囚徒"', '医生', '"小女孩"', '啦啦队员', '调香师', '佣兵', '"心理学家"'];
-const Hunter: string[] = [ '厂长', '鹿头', '小丑', '杰克', '蜘蛛', '宿伞之魂'];
+const Survivor: string[] = [ 
+  '律师', '"囚徒"', '医生', '"小女孩"', '啦啦队员', '调香师', '佣兵', '"心理学家"',
+  '咒术师', '先知', '祭司', '调酒师', '园丁', '作曲家', '古董商', '空军', '勘探员',
+  '杂技演员', '记者', '魔术师', '入殓师', '盲女', '幸运儿', '病患', '画家', '大幅',
+  '牛仔', '前锋', '击球手', '昆虫学者', '舞女', '冒险家', '木偶师', '玩具商', '机械师',
+  '野人', '"慈善家"', '守墓人', '小说家', '邮差', '教授', '飞行家', '哭泣小丑', '火灾调查员',
+
+];
+const Hunter: string[] = [ 
+  '红蝶', '宿伞之魂', '渔女', '杰克', '摄影师', '红夫人', '守夜人',
+  '鹿头', '梦之女巫', '小丑', '厂长', '噩梦', '愚人金', '使徒', '隐士',
+  '歌剧演员', '黄衣之主', '时空之影', '雕刻家', '小提琴家', '孽蜥', '爱哭鬼',
+  '博士', '26号守卫', '蜡像师', '蜘蛛', '破轮', '记录员', '疯眼',
+
+];
 
 function getRandomElement(arr: string[]) {
   if (arr.length === 0) {
@@ -19,9 +32,8 @@ export default class D5 {
   crons: Cron.ScheduledTask[] = [];
 
   constructor() {
-    this.crons.push(Cron.schedule('* * 12,19 * * *', () => {
+    this.crons.push(Cron.schedule('0 12,19 * * *', () => {
       console.log('identify 5 cron!');
-      qqClient.sendPrivateMessage({ message: '时间经不起等待，第五人格启动!', userId: 1633051172 });
     }));
   }
 
@@ -46,5 +58,4 @@ export default class D5 {
       throw error;
     }
   }
-
 }
