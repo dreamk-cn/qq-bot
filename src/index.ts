@@ -7,7 +7,7 @@ qqClient.on('connection', async () => {
     import('@/plugin/ai'),
     import('@/plugin/d5'),
     import('@/plugin/dice'),
-    import('@/plugin/yesOrNo'),
+    import('@/plugin/yes-or-no'),
   ]);
   plugin.forEach(async (p) => {
     new p.default();
