@@ -25,9 +25,9 @@ export default class Dice {
 
   @onCommand('d', () => true, [], 50, true)
   async handle(question: Message): Promise<boolean> {
+    console.log(this);
     return new Promise(async (resolve) => {
       const content = qqClient.formatRawMessage(question.raw_message);
-      console.log(content);
       try {
         const { x = 6, y = 11 } = extractDiceRoll(content);
         let sum = 0;
@@ -55,7 +55,7 @@ export default class Dice {
     });
   }
 
-  @onCommand('d help', () => true, [], 50, true)
+  @onCommand('d help', () => true, ['骰子'], 50, true)
   async handleHelp(question: Message): Promise<boolean> {
     qqClient.sendMessage({
       message: '骰子功能使用说明...',

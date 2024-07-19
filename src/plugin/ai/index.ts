@@ -3,6 +3,7 @@ import { onCommand } from '@/core/command-decorator';
 import { Message } from '@/core/types';
 import qqClient from '@/core/qq-client';
 import Config  from '@/config';
+import { HistoryMessage } from './db';
 
 const MAX_TOKENS = 4096;
 
@@ -10,10 +11,17 @@ const messages: SparkMessage[] = [ ...Config.BOT_PRESET ];
 export default class AI {
   name = '讯飞星火AI大模型';
 
+  historyMessage = HistoryMessage.getInstance();
+
   currentTokenSize: number = 0;
 
+  getHistoryMessage(user_id: number, group_id: number, limit: number) {
+    const list = this.historyMessage.get(user_id, limit, group_id);
+    console.log('历史记录：', list);
+  }
+
   async figureOutCurrentTokenSize() {
-    const { choices, usage } =  await sendMessageToSpark({ messages, model: 'generalv3' });
+    const { choices, usage } = await sendMessageToSpark({ messages, model: 'generalv3' });
   }
   
   @onCommand('', (message) => qqClient.isChatWithBot(message), [], 1, true)
@@ -27,6 +35,7 @@ export default class AI {
       });
       return isHandle;
     }
+    // this.getHistoryMessage(message.user_id, message.message_type === 'group' ? message.group_id : 0, 10);
     try {
       messages.push({ role: 'user', content: question });
       const { choices, usage } = await sendMessageToSpark({ messages, model: 'generalv3' });

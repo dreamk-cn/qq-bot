@@ -75,7 +75,7 @@ export interface RequestData {
 }
 
 // 指令处理器 for command 装饰器
-export type CommandHandler = (message: Message) => Promise<string>;
+export type CommandHandler = (message: Message) => Promise<string | boolean>;
 export type CommandRule = (message: Message) => boolean;
 export type CommandPriority = number;
 export type CommandBlock = boolean;

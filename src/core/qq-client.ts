@@ -2,7 +2,6 @@ import { EventEmitter } from 'events';
 import { WebSocket, Server, RawData } from 'ws';
 import { Message, RequestData } from '@/core/types';
 import { CommandRegistry } from '@/core/command-decorator';
-import Axios from 'axios';
 import config from '@/config/index';
 
 

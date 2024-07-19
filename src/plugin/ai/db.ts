@@ -1,12 +1,12 @@
 import Database from 'better-sqlite3';
 
-const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS message (
+const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS ai_message (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   userId INTEGER NOT NULL,
   groupId INTEGER,
   message TEXT,
   token INTEGER,
-  time TEXT
+  time INTEGER
 )`;
 
 export class HistoryMessage {
@@ -22,7 +22,7 @@ export class HistoryMessage {
   }
 
   constructor() {
-    this.db = new Database('./src/plugin/ai/message.db');
+    this.db = new Database('./src/plugin/ai/aimessage.db');
     this.db.exec(CREATE_TABLE);
   }
 
@@ -36,7 +36,10 @@ export class HistoryMessage {
     });
   }
 
-  get(userId: number, groupId: number, limit: number) {
+  get(userId: number, limit: number, groupId?: number) {
+    if (!groupId) {
+      return this.db.prepare('SELECT * FROM message WHERE userId = ? ORDER BY time DESC LIMIT ?').all(userId, limit);
+    }
     return this.db.prepare('SELECT * FROM message WHERE userId = ? AND groupId = ? ORDER BY time DESC LIMIT ?').all(userId, groupId, limit);
   }
 }

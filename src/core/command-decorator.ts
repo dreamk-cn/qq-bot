@@ -2,30 +2,18 @@
 import { Message, CommandHandler, CommandRule, CommandPriority, CommandBlock } from './types';
 import qqClient from '@/core/qq-client';
 
-// 扩展CommandHandler接口以包含更多元数据
-interface DecoratedCommandHandler extends CommandHandler {
-  rule?: CommandRule;
-  aliases?: string[];
-  priority?: CommandPriority;
-  block?: CommandBlock;
-}
-
 // 命令注册器的更新需支持更多元数据
 export class CommandRegistry {
   private static handlers: Array<{
     command: string | RegExp,
     rule: CommandRule,
-    handler: DecoratedCommandHandler,
+    handler: CommandHandler,
     aliases: string[],
     priority: CommandPriority,
     block: CommandBlock
   }> = [];
 
-  static formateMessage(message: string) {
-    return message;
-  }
-
-  static register(command: string | RegExp, handler: DecoratedCommandHandler, rule: CommandRule = () => true, aliases: string[] = [], priority: CommandPriority = 1, block: CommandBlock = false) {
+  static register(command: string | RegExp, handler: CommandHandler, rule: CommandRule = () => true, aliases: string[] = [], priority: CommandPriority = 1, block: CommandBlock = false) {
     let inserted = false;
     for (let i = this.handlers.length - 1; i >= 0; i--) {
       if ((this.handlers[i].priority ?? 1) > (priority ?? 1)) {
@@ -52,7 +40,6 @@ export class CommandRegistry {
    * @returns 处理结果
    */
   static async dispatch(message: Message) {
-    // 根据优先级排序，优先级高的先处理
     for (const { command, handler, rule, aliases, block } of this.handlers) {
       const formatMessage = qqClient.formatRawMessage(message.raw_message);
       if (
@@ -74,7 +61,6 @@ export class CommandRegistry {
   }
 }
 
-// 更新onCommand装饰器以支持更多参数
 export function onCommand(
   command: string | RegExp,
   rule: CommandRule = () => true,
@@ -85,12 +71,12 @@ export function onCommand(
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value as CommandHandler;
 
-    // 扩展为DecoratedCommandHandler
-    const decoratedHandler: DecoratedCommandHandler = Object.assign(originalMethod, { rule, aliases, priority, block });
+    console.log(`装饰器开始处理方法: ${String(propertyKey)}`);
 
     // 注册命令处理器，同时传递额外参数
-    CommandRegistry.register(command, decoratedHandler, rule, aliases, priority, block);
+    CommandRegistry.register(command, originalMethod, rule, aliases, priority, block);
 
     return descriptor;
   };
 }
+
